@@ -11,7 +11,12 @@ export type TypedFlow<I, O, Context> = Flow<Context> & {
     leading(ms: number): TypedFlow<I, O, Context>;
     switchMap<N>(fn: Step<O, N, Context>): TypedFlow<I, N, Context>;
     exhaustMap<N>(fn: Step<O, N, Context>): TypedFlow<I, N, Context>;
-    retry(times: number): TypedFlow<I, O, Context>;
+    retry(times: number | {
+        times: number;
+        delay?: number;
+        backoff?: "linear" | "exponential";
+    }): TypedFlow<I, O, Context>;
+    poll(interval: number): TypedFlow<I, O, Context>;
     timeout(ms: number): TypedFlow<I, O, Context>;
     catch(fn: (e: any, context: Context) => O | Promise<O>): TypedFlow<I, O, Context>;
     take(n: number): TypedFlow<I, O, Context>;
@@ -49,7 +54,12 @@ export declare class Flow<Context = {}> {
     take(n: number): any;
     switchMap(fn: Step<any, any, Context>): any;
     exhaustMap(fn: Step<any, any, Context>): any;
-    retry(times: number): this;
+    retry(timesOrOptions: number | {
+        times: number;
+        delay?: number;
+        backoff?: "linear" | "exponential";
+    }): this;
+    poll(interval: number): this;
     timeout(ms: number): this;
     catch(fn: (e: any, context: Context) => any): this;
 }
