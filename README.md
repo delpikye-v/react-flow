@@ -22,8 +22,8 @@ It focuses on **how async logic runs**, not:
 - Typed async execution pipeline
 - Immutable flow composition
 - Abort & cancellation via `AbortController`
-- Async orchestration operators: `debounce` · `retry` · `timeout` · `switchMap` ·` parallel`
-- Control flow: `filter` · `take` · `conditional execution`
+- Async orchestration operators: `debounce` · `retry` · `timeout` · `switchMap` ·` parallel`...
+- Control flow: `filter` · `take` · `conditional execution`...
 - Pause / resume execution
 - Framework-agnostic core
 - Optional React hook (`useFlow`)

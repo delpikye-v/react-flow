@@ -9,14 +9,19 @@ export type TypedFlow<I, O, Context> = Flow<Context> & {
     debounce(ms: number): TypedFlow<I, O, Context>;
     throttle(ms: number): TypedFlow<I, O, Context>;
     leading(ms: number): TypedFlow<I, O, Context>;
+    map<N>(fn: (v: O, context: Context) => N): TypedFlow<I, N, Context>;
     switchMap<N>(fn: Step<O, N, Context>): TypedFlow<I, N, Context>;
     exhaustMap<N>(fn: Step<O, N, Context>): TypedFlow<I, N, Context>;
+    distinct(compare?: (prev: O, next: O) => boolean): TypedFlow<I, O, Context>;
     retry(times: number | {
         times: number;
         delay?: number;
         backoff?: "linear" | "exponential";
     }): TypedFlow<I, O, Context>;
-    poll(interval: number): TypedFlow<I, O, Context>;
+    poll(ms: number, options?: {
+        until?: (v: any) => boolean;
+        max?: number;
+    }): TypedFlow<I, O, Context>;
     timeout(ms: number): TypedFlow<I, O, Context>;
     catch(fn: (e: any, context: Context) => O | Promise<O>): TypedFlow<I, O, Context>;
     take(n: number): TypedFlow<I, O, Context>;
@@ -32,6 +37,7 @@ export declare class Flow<Context = {}> {
     private onStartHandlers;
     private onDoneHandlers;
     private onErrorHandlers;
+    private finallyHandlers;
     private initialInput?;
     constructor(ctx?: Context);
     static from<I, Context = {}>(input: I, context?: Context): TypedFlow<I, I, Context>;
@@ -52,14 +58,20 @@ export declare class Flow<Context = {}> {
     leading(ms: number): any;
     throttle(ms: number): any;
     take(n: number): any;
+    map(fn: (v: any, context: Context) => any): any;
     switchMap(fn: Step<any, any, Context>): any;
     exhaustMap(fn: Step<any, any, Context>): any;
+    distinct(compare?: (prev: any, next: any) => boolean): any;
     retry(timesOrOptions: number | {
         times: number;
         delay?: number;
         backoff?: "linear" | "exponential";
     }): this;
-    poll(interval: number): this;
+    poll(ms: number, options?: {
+        until?: (v: any) => boolean;
+        max?: number;
+    }): this;
     timeout(ms: number): this;
     catch(fn: (e: any, context: Context) => any): this;
+    finally(fn: () => void): this;
 }
