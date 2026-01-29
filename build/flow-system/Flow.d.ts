@@ -19,12 +19,13 @@ export type TypedFlow<I, O, Context> = Flow<Context> & {
         backoff?: "linear" | "exponential";
     }): TypedFlow<I, O, Context>;
     poll(ms: number, options?: {
-        until?: (v: any) => boolean;
+        until?: (v: O) => boolean;
         max?: number;
     }): TypedFlow<I, O, Context>;
     timeout(ms: number): TypedFlow<I, O, Context>;
     catch(fn: (e: any, context: Context) => O | Promise<O>): TypedFlow<I, O, Context>;
     take(n: number): TypedFlow<I, O, Context>;
+    finally(fn: () => void): TypedFlow<I, O, Context>;
 };
 export declare class Flow<Context = {}> {
     private readonly ctx;

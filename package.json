@@ -1,6 +1,6 @@
 {
   "name": "react-flow-z",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A lightweight async flow runtime for orchestrating side effects with explicit control over cancellation, debounce, throttling, and execution order.",
   "license": "MIT",
   "author": "Delpi.Kye",
