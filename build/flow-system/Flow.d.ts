@@ -7,6 +7,7 @@ export type TypedFlow<I, O, Context> = Flow<Context> & {
     tap(fn: (v: O, context: Context) => void): TypedFlow<I, O, Context>;
     filter(cond: Condition<O>): TypedFlow<I, O, Context>;
     debounce(ms: number): TypedFlow<I, O, Context>;
+    delay(ms: number): TypedFlow<I, O, Context>;
     throttle(ms: number): TypedFlow<I, O, Context>;
     leading(ms: number): TypedFlow<I, O, Context>;
     map<N>(fn: (v: O, context: Context) => N): TypedFlow<I, N, Context>;
@@ -23,6 +24,7 @@ export type TypedFlow<I, O, Context> = Flow<Context> & {
         max?: number;
     }): TypedFlow<I, O, Context>;
     timeout(ms: number): TypedFlow<I, O, Context>;
+    tapError(fn: (v: O, context: Context) => void): TypedFlow<I, O, Context>;
     catch(fn: (e: any, context: Context) => O | Promise<O>): TypedFlow<I, O, Context>;
     take(n: number): TypedFlow<I, O, Context>;
     finally(fn: () => void): TypedFlow<I, O, Context>;
@@ -32,7 +34,7 @@ export declare class Flow<Context = {}> {
     static SKIP: symbol;
     private ops;
     private paused?;
-    private resume;
+    private resume?;
     private controller;
     private cancelHandlers;
     private onStartHandlers;
@@ -56,6 +58,7 @@ export declare class Flow<Context = {}> {
     tap(fn: (v: any, context: Context) => void): any;
     filter(cond: Condition<any>): any;
     debounce(ms: number): any;
+    delay(ms: number): any;
     leading(ms: number): any;
     throttle(ms: number): any;
     take(n: number): any;
@@ -73,6 +76,7 @@ export declare class Flow<Context = {}> {
         max?: number;
     }): this;
     timeout(ms: number): this;
+    tapError(fn: (e: any, context: Context) => void): this;
     catch(fn: (e: any, context: Context) => any): this;
     finally(fn: () => void): this;
 }

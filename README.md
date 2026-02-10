@@ -7,20 +7,15 @@
 ---
 
 `react-flow-z` is a **small, framework-agnostic async flow runtime**.
-
-It focuses on **how async logic runs**, not:
-- how state is stored
-- how UI renders
-- or how effects are magically managed
+It focuses on **how async logic runs**
 
 > This library is about **orchestration**, not reactivity.
 
 ---
 
 ## Why react-flow-z
-
 - Typed async execution pipeline
-- Immutable flow composition
+- Declarative flow composition
 - Abort & cancellation via `AbortController`
 - Async orchestration operators: `debounce` · `retry` · `timeout` · `switchMap` ·` parallel`...
 - Control flow: `filter` · `take` · `conditional execution`...
@@ -45,10 +40,15 @@ import { Flow } from "react-flow-z"
 
 new Flow()
   .debounce(300)
-  .switchMap(q => fetch(`/search?q=${q}`))
-  .tap(res => console.log(res))
+  .switchMap(async q => {
+    const res = await fetch(`/search?q=${q}`)
+    return res.json()
+  })
+  .tap(console.log)
   .run("hello")
 ```
+
+> Avoid mutating a shared Flow instance inside React render loops.
 
 ---
 
@@ -104,39 +104,85 @@ useFlow(
 
 ##### searchFlow.ts
 ```ts
-import { Flow } from "react-flow-z"
+import { Flow, createFlow } from "react-flow-z";
 
-export const searchFlow = new Flow()
-  .onStart(() => console.log("loading..."))
+export type Post = {
+  id: number;
+  title: string;
+};
+
+export const searchFlow = new Flow<string, Post[]>()
   .debounce(300)
-  .filter((q: string) => q.length > 0)
-  .switchMap(async (q: string) => {
+  .filter(q => q.trim().length > 0)
+  .switchMap(async q => {
     const res = await fetch(
       `https://jsonplaceholder.typicode.com/posts?q=${q}`
-    )
-    if (!res.ok) throw new Error("network error")
-    return res.json()
-  })
-  .onDone(() => console.log("done"))
-  .onError(err => console.error(err))
+    );
+
+    if (!res.ok) throw new Error("network error");
+
+    return res.json();
+  });
 
 // searchFlow.run("r")
 // searchFlow.run("re")
 // searchFlow.run("react")
 ```
 
+##### createFlow.ts
+
+```ts
+import { Flow, createFlow } from "react-flow-z";
+export const searchFlow = createFlow<string, Post[]>()
+  .debounce(300)
+  .filter(q => q.trim().length > 0)
+  .switchMap(async q => {
+    const res = await fetch(
+      `https://jsonplaceholder.typicode.com/posts?q=${q}`
+    )
+    return res.json()
+  })
+```
+
 ##### React usage
 ```ts
+import { useEffect, useState } from "react";
+import { searchFlow, Post } from "./searchFlow";
+import "./styles.css";
+
 function SearchExample() {
-  const [q, setQ] = useState("")
-  const [posts, setPosts] = useState<any[]>([])
+  const [q, setQ] = useState("");
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!q) {
+      setPosts([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     searchFlow
-      .tap(setPosts)
-      .catch(() => [])
       .run(q)
-  }, [q])
+      .then(result => {
+        setPosts(Array.isArray(result) ? result : []);
+      })
+      .catch(err => {
+        console.error(err);
+        setError("Something went wrong");
+        setPosts([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+
+    return () => {
+      searchFlow.cancel();
+    };
+  }, [q]);
 
   return (
     <>
@@ -145,13 +191,26 @@ function SearchExample() {
         onChange={e => setQ(e.target.value)}
         placeholder="Search posts..."
       />
+
+      {loading && <p>Loading...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
       <ul>
         {posts.map(p => (
           <li key={p.id}>{p.title}</li>
         ))}
       </ul>
     </>
-  )
+  );
+}
+
+export default function App() {
+  return (
+    <div className="App">
+      <h2>react-flow-z + React</h2>
+      <SearchExample />
+    </div>
+  );
 }
 
 ```
@@ -195,13 +254,13 @@ export function runSearch(q: string) {
 
 ## Compare high-level
 
-| Point                  | react-flow-z  | RxJS  | Redux-Saga | XState   | React Query |
-| ---------------------- | ------------  | ----- | ---------- | -------  | ----------- |
-| Async orchestration    | ✅            | ✅     | ✅         | 🟡       | ❌          |
-| Debounce / cancel      | ✅            | ✅     | 🟡         | 🟡       | ❌          |
-| Execution-first design | ✅            | ❌     | 🟡         | ❌       | ❌          |
-| Framework-agnostic     | ✅            | ✅     | ❌         | 🟡       | ❌          |
-| Learning curve         | ⭐ easy       | ⭐⭐⭐  | ⭐⭐       | ⭐⭐⭐    | ⭐          |
+| Point                  | react-flow-z  | RxJS  | Redux-Saga | XState   |
+| ---------------------- | ------------  | ----- | ---------- | -------  |
+| Async orchestration    | ✅            | ✅     | ✅         | 🟡       |
+| Debounce / cancel      | ✅            | ✅     | 🟡         | 🟡       |
+| Execution-first design | ✅            | ❌     | 🟡         | ❌       |
+| Framework-agnostic     | ✅            | ✅     | ❌         | 🟡       |
+| Learning curve         | ⭐ easy       | ⭐⭐⭐  | ⭐⭐       | ⭐⭐⭐    |
 
 ---
 
@@ -215,6 +274,14 @@ export function runSearch(q: string) {
 If you only need data fetching → use React Query  
 If you need event streams → use RxJS  
 If you need **explicit async execution with cancel / debounce / queue** → react-flow-z
+
+---
+
+## Flow lifecycle notes
+
+- A `Flow` instance is stateful
+- Operators like `tap`, `catch`, `onDone` mutate the instance
+- Prefer: configuring the flow once, handling React state outside the flow
 
 ---
 
